@@ -52,6 +52,21 @@ func assertFile(t *testing.T, path, want string) {
 	}
 }
 
+func TestOpenOutputRejectsPathTraversal(t *testing.T) {
+	torrent := TorrentFile{
+		Name:   "evil",
+		Length: 5,
+		Files: []File{
+			{Path: []string{"..", "..", "escaped.txt"}, Length: 5},
+		},
+	}
+
+	root := filepath.Join(t.TempDir(), "nested", "evil")
+	if _, _, err := torrent.openOutput(root); err == nil {
+		t.Fatal("expected the unsafe path to be rejected")
+	}
+}
+
 // TestDownloadToFile runs the whole thing: tracker announce, peer handshake
 // and the download itself.
 func TestDownloadToFile(t *testing.T) {

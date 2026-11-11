@@ -116,10 +116,11 @@ func (bto *bencodeTorrent) toTorrentFile(info bencodeInfo) (TorrentFile, error) 
 	var files []File
 	if len(info.Files) > 0 {
 		for _, f := range info.Files {
-			if len(f.Path) == 0 {
-				return TorrentFile{}, fmt.Errorf("torrent has a file with an empty path")
+			cleaned, err := cleanPath(f.Path)
+			if err != nil {
+				return TorrentFile{}, err
 			}
-			files = append(files, File{Path: f.Path, Length: f.Length})
+			files = append(files, File{Path: cleaned, Length: f.Length})
 			length += f.Length
 		}
 	} else {

@@ -79,3 +79,15 @@ func TestOpenRejectsTruncatedTorrent(t *testing.T) {
 		t.Fatal("expected an error for a truncated torrent")
 	}
 }
+
+func TestOpenRejectsUnsafeFilePath(t *testing.T) {
+	pieces := strings.Repeat("a", 20)
+	info := "d5:filesl" +
+		"d6:lengthi5e4:pathl2:..4:evilee" +
+		"e4:name3:dir12:piece lengthi5e6:pieces20:" + pieces + "e"
+	path := writeTorrent(t, "d8:announce19:http://tracker.test4:info"+info+"e")
+
+	if _, err := Open(path); err == nil {
+		t.Fatal("expected a torrent with a .. path to be rejected")
+	}
+}

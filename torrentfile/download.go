@@ -88,7 +88,11 @@ func (t *TorrentFile) openOutput(path string) (io.WriterAt, func(), error) {
 
 	var offset int64
 	for _, f := range t.Files {
-		fullPath := filepath.Join(append([]string{path}, f.Path...)...)
+		fullPath, err := safeJoin(path, f.Path)
+		if err != nil {
+			cleanup()
+			return nil, nil, err
+		}
 		if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
 			cleanup()
 			return nil, nil, err
