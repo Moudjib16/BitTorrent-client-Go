@@ -1,2 +1,3 @@
 /bittorrent-client-go
 *.exe
+*.torrent

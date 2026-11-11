@@ -89,7 +89,7 @@ func TestDownloadToFile(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	if err := torrent.DownloadToFile(ctx, output); err != nil {
+	if err := torrent.DownloadToFile(ctx, output, nil); err != nil {
 		t.Fatal(err)
 	}
 	assertFile(t, output, string(data))

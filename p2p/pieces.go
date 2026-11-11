@@ -21,10 +21,12 @@ const (
 
 // pieceManager hands out pieces to workers and keeps track of what is left.
 type pieceManager struct {
-	mu     sync.Mutex
-	pieces []piece
-	status []pieceStatus
-	done   int
+	mu        sync.Mutex
+	pieces    []piece
+	status    []pieceStatus
+	done      int
+	doneBytes int64
+	totalSize int64
 }
 
 func newPieceManager(pieceLength, totalLength int64, hashes [][20]byte) (*pieceManager, error) {
@@ -48,8 +50,9 @@ func newPieceManager(pieceLength, totalLength int64, hashes [][20]byte) (*pieceM
 	}
 
 	return &pieceManager{
-		pieces: pieces,
-		status: make([]pieceStatus, len(pieces)),
+		pieces:    pieces,
+		status:    make([]pieceStatus, len(pieces)),
+		totalSize: totalLength,
 	}, nil
 }
 
@@ -84,6 +87,22 @@ func (pm *pieceManager) finish(p piece) {
 	if pm.status[p.index] != pieceDone {
 		pm.status[p.index] = pieceDone
 		pm.done++
+		pm.doneBytes += p.length
+	}
+}
+
+// progress returns a snapshot of the download for the status line.
+func (pm *pieceManager) progress(peers, peersTotal int) Progress {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+
+	return Progress{
+		BytesDone:   pm.doneBytes,
+		BytesTotal:  pm.totalSize,
+		PiecesDone:  pm.done,
+		PiecesTotal: len(pm.pieces),
+		Peers:       peers,
+		PeersTotal:  peersTotal,
 	}
 }
 

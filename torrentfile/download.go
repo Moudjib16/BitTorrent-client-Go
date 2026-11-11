@@ -15,20 +15,23 @@ import (
 
 // DownloadToFile downloads the torrent and writes it to path. Torrents with
 // more than one file need a directory, use DownloadToDir for those.
-func (t *TorrentFile) DownloadToFile(ctx context.Context, path string) error {
+//
+// The progress function, if it is not nil, is called about once a second with
+// the state of the download.
+func (t *TorrentFile) DownloadToFile(ctx context.Context, path string, progress func(p2p.Progress)) error {
 	if len(t.Files) > 0 {
 		return fmt.Errorf("this torrent has %d files, use DownloadToDir instead", len(t.Files))
 	}
-	return t.download(ctx, path)
+	return t.download(ctx, path, progress)
 }
 
 // DownloadToDir downloads the torrent into dir. Everything is written to a
 // folder inside dir that is named after the torrent.
-func (t *TorrentFile) DownloadToDir(ctx context.Context, dir string) error {
-	return t.download(ctx, filepath.Join(dir, t.Name))
+func (t *TorrentFile) DownloadToDir(ctx context.Context, dir string, progress func(p2p.Progress)) error {
+	return t.download(ctx, filepath.Join(dir, t.Name), progress)
 }
 
-func (t *TorrentFile) download(ctx context.Context, path string) error {
+func (t *TorrentFile) download(ctx context.Context, path string, progress func(p2p.Progress)) error {
 	peerID, err := randomPeerID()
 	if err != nil {
 		return err
@@ -57,7 +60,7 @@ func (t *TorrentFile) download(ctx context.Context, path string) error {
 		Length:      t.Length,
 		Name:        t.Name,
 	}
-	return torrent.Download(ctx, writer)
+	return torrent.Download(ctx, writer, progress)
 }
 
 // openOutput creates the file or files we are going to write to. The

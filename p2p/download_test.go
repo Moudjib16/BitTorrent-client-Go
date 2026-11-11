@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"sync"
 	"testing"
 	"time"
 )
@@ -230,11 +231,33 @@ func runDownloadTest(t *testing.T, lateBitfield bool) {
 	}
 	defer out.Close()
 
+	var reportsMu sync.Mutex
+	var reports []Progress
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := torrent.Download(ctx, out); err != nil {
+	if err := torrent.Download(ctx, out, func(p Progress) {
+		reportsMu.Lock()
+		reports = append(reports, p)
+		reportsMu.Unlock()
+	}); err != nil {
 		t.Fatal(err)
+	}
+
+	reportsMu.Lock()
+	defer reportsMu.Unlock()
+	if len(reports) == 0 {
+		t.Fatal("no progress was reported")
+	}
+	last := reports[len(reports)-1]
+	if last.Percent() != 100 {
+		t.Errorf("final progress is %.2f%%, want 100%%", last.Percent())
+	}
+	if last.BytesDone != int64(len(data)) {
+		t.Errorf("final progress says %d bytes done, want %d", last.BytesDone, len(data))
+	}
+	if last.PiecesDone != len(hashes) {
+		t.Errorf("final progress says %d pieces done, want %d", last.PiecesDone, len(hashes))
 	}
 
 	got, err := os.ReadFile(out.Name())
@@ -262,7 +285,7 @@ func TestDownloadWithoutPeers(t *testing.T) {
 		PieceLength: 4,
 		Length:      4,
 	}
-	if err := torrent.Download(context.Background(), nil); err == nil {
+	if err := torrent.Download(context.Background(), nil, nil); err == nil {
 		t.Fatal("expected an error when there are no peers")
 	}
 }

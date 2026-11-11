@@ -9,6 +9,7 @@ the command line and nothing else.
 - Announces to HTTP trackers and gets a list of peers
 - Talks the BitTorrent peer protocol: handshake, bitfield, requests and pieces
 - Downloads pieces in parallel and checks every piece against its SHA-1 hash
+- Prints the percentage, speed, ETA and number of peers while it downloads
 - Writes the data to disk while it downloads, so it never holds the whole
   torrent in memory
 

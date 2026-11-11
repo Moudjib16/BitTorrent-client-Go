@@ -6,7 +6,12 @@ import (
 	"io"
 	"net"
 	"sync"
+	"sync/atomic"
+	"time"
 )
+
+// progressInterval is how often the status of a download is reported.
+const progressInterval = time.Second
 
 // Torrent is everything needed to download one torrent.
 type Torrent struct {
@@ -21,7 +26,10 @@ type Torrent struct {
 
 // Download fetches every piece and writes it to out. The writer must be safe
 // to use from multiple goroutines, since each peer writes its own pieces.
-func (t *Torrent) Download(ctx context.Context, out io.WriterAt) error {
+//
+// If progress is not nil it is called about once a second with the state of
+// the download, and once more when everything is done.
+func (t *Torrent) Download(ctx context.Context, out io.WriterAt, progress func(Progress)) error {
 	if len(t.Peers) == 0 {
 		return fmt.Errorf("no peers to download from")
 	}
@@ -59,6 +67,32 @@ func (t *Torrent) Download(ctx context.Context, out io.WriterAt) error {
 		return true
 	}
 
+	var connected atomic.Int64
+	report := func() {
+		if progress == nil {
+			return
+		}
+		progress(pm.progress(int(connected.Load()), len(t.Peers)))
+	}
+
+	stopReporting := make(chan struct{})
+	defer close(stopReporting)
+	if progress != nil {
+		report()
+		go func() {
+			ticker := time.NewTicker(progressInterval)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					report()
+				case <-stopReporting:
+					return
+				}
+			}
+		}()
+	}
+
 	var wg sync.WaitGroup
 	var errMu sync.Mutex
 	var firstErr error
@@ -68,7 +102,7 @@ func (t *Torrent) Download(ctx context.Context, out io.WriterAt) error {
 		go func(p Peer) {
 			defer wg.Done()
 
-			err := t.downloadFromPeer(ctx, p, pm, out, addConn)
+			err := t.downloadFromPeer(ctx, p, pm, out, addConn, &connected)
 			if pm.isDone() {
 				cancel()
 				return
@@ -83,6 +117,7 @@ func (t *Torrent) Download(ctx context.Context, out io.WriterAt) error {
 		}(peer)
 	}
 	wg.Wait()
+	report()
 
 	if !pm.isDone() {
 		errMu.Lock()

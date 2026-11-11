@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync/atomic"
 	"time"
 )
 
@@ -23,7 +24,7 @@ const (
 
 var errChoked = errors.New("peer choked us")
 
-func (t *Torrent) downloadFromPeer(ctx context.Context, peer Peer, pm *pieceManager, out io.WriterAt, addConn func(net.Conn) bool) error {
+func (t *Torrent) downloadFromPeer(ctx context.Context, peer Peer, pm *pieceManager, out io.WriterAt, addConn func(net.Conn) bool, connected *atomic.Int64) error {
 	dialer := net.Dialer{Timeout: dialTimeout}
 	c, err := dialer.DialContext(ctx, "tcp", peer.String())
 	if err != nil {
@@ -34,6 +35,8 @@ func (t *Torrent) downloadFromPeer(ctx context.Context, peer Peer, pm *pieceMana
 	if !addConn(c) {
 		return nil // another worker finished the torrent while we were dialing
 	}
+	connected.Add(1)
+	defer connected.Add(-1)
 
 	c.SetDeadline(time.Now().Add(handshakeTimeout))
 	if err := handshake(c, t.InfoHash, t.PeerID); err != nil {

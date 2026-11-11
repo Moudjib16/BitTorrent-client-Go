@@ -48,7 +48,11 @@ func run(ctx context.Context, args []string) error {
 	}
 
 	fmt.Printf("downloading %s (%s)\n", torrent.Name, humanSize(torrent.Length))
-	if err := torrent.DownloadToDir(ctx, *dir); err != nil {
+
+	status := newStatusPrinter()
+	err = torrent.DownloadToDir(ctx, *dir, status.update)
+	status.finish()
+	if err != nil {
 		return err
 	}
 
