@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -121,6 +122,8 @@ func (p *fakePeer) serve() {
 		has.setPiece(i)
 	}
 
+	sawBitfield := false
+
 	sendBitfield := func() error {
 		return writeMessage(conn, msgBitfield, has)
 	}
@@ -154,8 +157,20 @@ func (p *fakePeer) serve() {
 			p.err <- nil // the client hung up, which is how it says goodbye
 			return
 		}
-		if msg == nil || msg.ID != msgRequest {
+		if msg == nil {
 			continue
+		}
+		if msg.ID == msgBitfield {
+			sawBitfield = true
+			continue
+		}
+		if msg.ID != msgRequest {
+			continue
+		}
+		if !sawBitfield {
+			// Peers ignore clients that never send a bitfield.
+			p.err <- fmt.Errorf("the client did not send a bitfield")
+			return
 		}
 
 		index := binary.BigEndian.Uint32(msg.Payload[0:4])

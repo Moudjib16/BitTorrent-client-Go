@@ -39,6 +39,11 @@ func (t *Torrent) downloadFromPeer(ctx context.Context, peer Peer, pm *pieceMana
 	if err := handshake(c, t.InfoHash, t.PeerID); err != nil {
 		return fmt.Errorf("%s: %w", peer, err)
 	}
+	// We have no pieces, but we still send an empty bitfield. Peers treat a
+	// client that never sends one as a spider and refuse to unchoke us.
+	if err := writeMessage(c, msgBitfield, make([]byte, (len(t.PieceHashes)+7)/8)); err != nil {
+		return fmt.Errorf("%s: send bitfield: %w", peer, err)
+	}
 	if err := writeMessage(c, msgInterested, nil); err != nil {
 		return fmt.Errorf("%s: send interested: %w", peer, err)
 	}
