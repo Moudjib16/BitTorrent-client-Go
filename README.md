@@ -51,3 +51,7 @@ go test ./...
 
 The tests use a small fake peer and a fake tracker, so no network access is
 needed.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
