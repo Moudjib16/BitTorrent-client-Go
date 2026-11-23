@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"bittorrent-client-go/p2p"
+	"github.com/Moudjib16/BitTorrent-client-Go/p2p"
 )
 
 // statusPrinter keeps one line on the screen and updates it in place.

@@ -1,4 +1,4 @@
-module bittorrent-client-go
+module github.com/Moudjib16/BitTorrent-client-Go
 
 go 1.22.0
 

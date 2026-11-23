@@ -14,7 +14,7 @@ import (
 
 	"github.com/jackpal/bencode-go"
 
-	"bittorrent-client-go/p2p"
+	"github.com/Moudjib16/BitTorrent-client-Go/p2p"
 )
 
 const (

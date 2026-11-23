@@ -13,6 +13,18 @@ the command line and nothing else.
 - Writes the data to disk while it downloads, so it never holds the whole
   torrent in memory
 
+## Installing
+
+Download a ready-made binary for Windows, Linux or macOS from the
+[releases page](https://github.com/Moudjib16/BitTorrent-client-Go/releases),
+or install it with Go:
+
+```sh
+go install github.com/Moudjib16/BitTorrent-client-Go@latest
+```
+
+`go install` names the program `BitTorrent-client-Go`, after the repository.
+
 ## Building and using
 
 ```sh

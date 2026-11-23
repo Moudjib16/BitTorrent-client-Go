@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/signal"
 
-	"bittorrent-client-go/torrentfile"
+	"github.com/Moudjib16/BitTorrent-client-Go/torrentfile"
 )
 
 func main() {

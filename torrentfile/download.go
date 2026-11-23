@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"bittorrent-client-go/p2p"
-	"bittorrent-client-go/tracker"
+	"github.com/Moudjib16/BitTorrent-client-Go/p2p"
+	"github.com/Moudjib16/BitTorrent-client-Go/tracker"
 )
 
 // DownloadToFile downloads the torrent and writes it to path. Torrents with
